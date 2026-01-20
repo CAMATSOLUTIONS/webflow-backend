@@ -3,7 +3,6 @@ const axios = require("axios");
 
 const app = express();
 
-// Webflow can send JSON or form-encoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -13,22 +12,22 @@ app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// Webflow webhook route
+// Webflow webhook
 app.post("/submit", async (req, res) => {
   try {
     console.log("=== /submit HIT ===");
     console.log("RAW BODY:", req.body);
 
-    // Correct path from your logs:
     const formData = req.body.payload?.data || {};
     const token = formData.recaptcha_token;
 
     console.log("Form data:", formData);
     console.log("Token received:", token);
 
+    // If token is missing, ignore this submission
     if (!token) {
-      console.log("No reCAPTCHA token found");
-      return res.status(400).send("No reCAPTCHA token");
+      console.log("Empty token — ignoring first submit");
+      return res.status(200).send("Ignored empty token");
     }
 
     // Verify with Google
@@ -48,7 +47,7 @@ app.post("/submit", async (req, res) => {
     const result = googleResponse.data;
 
     if (!result.success) {
-      console.log("reCAPTCHA failed");
+      console.log("reCAPTCHA failed:", result["error-codes"]);
       return res.status(403).send("reCAPTCHA failed");
     }
 
